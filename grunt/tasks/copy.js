@@ -11,7 +11,7 @@ module.exports = {
   task: function(grunt, config) {
     return {
       options: {
-        noProcess: ['**/*.{png,gif,jpg,ico}'],
+        noProcess: ['**/*.{png,gif,jpg,ico}', '**/cartodb.uncompressed.js'],
         process: function (content, srcpath) {
 
           // Replace string task corrupts images
@@ -66,6 +66,16 @@ module.exports = {
           cwd: '<%= config.app %>/css',
           src: '**/*.css',
           dest: '.tmp/css'
+        }]
+      },
+
+      toLandTech: {
+        files: [{
+          expand: true,
+          dot: true,
+          cwd: '<%= config.dist %>',
+          src: 'cartodb.uncompressed.js',
+          dest: '../LandInsight/app/js/lib'
         }]
       },
 

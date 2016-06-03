@@ -113,7 +113,9 @@ function setImageOpacityIE8(img, opacity) {
     }
 }
 
-function CartoDBLayerGroupBase() {}
+function CartoDBLayerGroupBase() {
+  
+}
 
 CartoDBLayerGroupBase.prototype.setOpacity = function(opacity) {
   if (isNaN(opacity) || opacity > 1 || opacity < 0) {
@@ -129,6 +131,13 @@ CartoDBLayerGroupBase.prototype.setOpacity = function(opacity) {
 };
 
 CartoDBLayerGroupBase.prototype.setAttribution = function() {};
+
+CartoDBLayerGroupBase.prototype.releaseTile = function(tile) {
+  if (tile.removeAttribute) {
+    tile.removeAttribute('src');
+  }
+  wax.g.connector.prototype.releaseTile.call(this, tile);
+};
 
 CartoDBLayerGroupBase.prototype.getTile = function(coord, zoom, ownerDocument) {
   var EMPTY_GIF = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -149,6 +158,40 @@ CartoDBLayerGroupBase.prototype.getTile = function(coord, zoom, ownerDocument) {
   }
 
   var im = wax.g.connector.prototype.getTile.call(this, coord, zoom, ownerDocument);
+  
+  var requestStart = new Event("load").timeStamp;
+  if (this._requestStats == null) {
+    this._requestStats = {
+      requestTimeTotal: 0,
+      numberRequests: 0,
+      shortestRequest: Number.MAX_VALUE,
+      longestRequest: 0,
+      getAverage: function() {
+        return this.requestTimeTotal / this.numberRequests;
+      }
+    };
+  }
+  var self = this;
+  im.addEventListener('load', function(event) {
+    var requestEnd = event.timeStamp;
+    var duration = requestEnd - requestStart;
+    
+    self._requestStats.requestTimeTotal += duration;
+    self._requestStats.numberRequests += 1;
+    if (duration > self._requestStats.longestRequest) {
+      self._requestStats.longestRequest = duration;
+    }
+    if (duration > self._requestStats.shortestRequest) {
+      self._requestStats.shortestRequest = duration;
+    }
+
+    if (self._requestStats.getAverage() > 15000) {
+      self.trigger('slow-tile-requests', _.clone(self._requestStats), self);
+    }
+  });
+  im.addEventListener('error', function(event) {
+    self.trigger('tile-request-error', self);
+  });
 
   // in IE8 semi transparency does not work and needs filter
   if( ielt9 ) {
