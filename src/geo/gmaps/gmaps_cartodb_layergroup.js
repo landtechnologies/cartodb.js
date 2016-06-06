@@ -172,25 +172,12 @@ CartoDBLayerGroupBase.prototype.getTile = function(coord, zoom, ownerDocument) {
     };
   }
   var self = this;
+  self.trigger('tile-request-start', im, self);
   im.addEventListener('load', function(event) {
-    var requestEnd = event.timeStamp;
-    var duration = requestEnd - requestStart;
-    
-    self._requestStats.requestTimeTotal += duration;
-    self._requestStats.numberRequests += 1;
-    if (duration > self._requestStats.longestRequest) {
-      self._requestStats.longestRequest = duration;
-    }
-    if (duration > self._requestStats.shortestRequest) {
-      self._requestStats.shortestRequest = duration;
-    }
-
-    if (self._requestStats.getAverage() > 15000) {
-      self.trigger('slow-tile-requests', _.clone(self._requestStats), self);
-    }
+    self.trigger('tile-request-success', im, event, self);
   });
   im.addEventListener('error', function(event) {
-    self.trigger('tile-request-error', self);
+    self.trigger('tile-request-error', im, self);
   });
 
   // in IE8 semi transparency does not work and needs filter
