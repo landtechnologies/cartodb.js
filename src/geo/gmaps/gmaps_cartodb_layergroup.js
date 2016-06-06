@@ -159,18 +159,6 @@ CartoDBLayerGroupBase.prototype.getTile = function(coord, zoom, ownerDocument) {
 
   var im = wax.g.connector.prototype.getTile.call(this, coord, zoom, ownerDocument);
   
-  var requestStart = new Event("load").timeStamp;
-  if (this._requestStats == null) {
-    this._requestStats = {
-      requestTimeTotal: 0,
-      numberRequests: 0,
-      shortestRequest: Number.MAX_VALUE,
-      longestRequest: 0,
-      getAverage: function() {
-        return this.requestTimeTotal / this.numberRequests;
-      }
-    };
-  }
   var self = this;
   self.trigger('tile-request-start', im, self);
   im.addEventListener('load', function(event) {
