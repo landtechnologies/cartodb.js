@@ -136,7 +136,11 @@ CartoDBLayerGroupBase.prototype.releaseTile = function(tile) {
   if (tile.removeAttribute) {
     tile.removeAttribute('src');
   }
+  var requesting = tile.loadingTile;
   wax.g.connector.prototype.releaseTile.call(this, tile);
+  if (requesting) {
+    this.trigger('tile-request-cancelled', tile, this);
+  }
 };
 
 CartoDBLayerGroupBase.prototype.getTile = function(coord, zoom, ownerDocument) {
@@ -160,12 +164,15 @@ CartoDBLayerGroupBase.prototype.getTile = function(coord, zoom, ownerDocument) {
   var im = wax.g.connector.prototype.getTile.call(this, coord, zoom, ownerDocument);
   
   var self = this;
+  im.loadingTile = true;
   self.trigger('tile-request-start', im, self);
   im.addEventListener('load', function(event) {
     self.trigger('tile-request-success', im, event, self);
+    im.loadingTile = false;
   });
   im.addEventListener('error', function(event) {
     self.trigger('tile-request-error', im, self);
+    im.loadingTile = false;
   });
 
   // in IE8 semi transparency does not work and needs filter
